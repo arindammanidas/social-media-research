@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Social Media & Education Insights</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg-color: #f5f7fb;
+      --card-bg: #ffffff;
+      --text-color: #1a1f36;
+      --muted-text: #5f6b8a;
+      --accent: #6366f1;
+      --accent-2: #ec4899;
+      --accent-3: #10b981;
+      --border-radius: 18px;
+      --shadow: 0 18px 32px rgba(15, 23, 42, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg-color);
+      color: var(--text-color);
+    }
+
+    header {
+      padding: 64px 24px 24px;
+      text-align: center;
+      background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(16, 185, 129, 0.08));
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 2.75rem;
+      font-weight: 700;
+    }
+
+    header p {
+      max-width: 720px;
+      margin: 16px auto 0;
+      font-size: 1.1rem;
+      line-height: 1.6;
+      color: var(--muted-text);
+    }
+
+    main {
+      max-width: 1200px;
+      margin: -48px auto 64px;
+      padding: 0 24px 48px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 32px;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border-radius: var(--border-radius);
+      padding: 24px;
+      box-shadow: var(--shadow);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      min-height: 340px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card::before {
+      content: "";
+      position: absolute;
+      inset: -80px 40% auto -60px;
+      height: 220px;
+      background: radial-gradient(circle, rgba(99, 102, 241, 0.12), transparent 60%);
+      z-index: 0;
+    }
+
+    .card h2 {
+      font-size: 1.25rem;
+      margin: 0;
+      font-weight: 600;
+      z-index: 1;
+    }
+
+    .card p {
+      margin: 0;
+      color: var(--muted-text);
+      font-size: 0.95rem;
+      line-height: 1.5;
+      z-index: 1;
+    }
+
+    canvas {
+      width: 100% !important;
+      height: 100% !important;
+      max-height: 280px;
+      z-index: 2;
+    }
+
+    .insight-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: grid;
+      gap: 12px;
+      z-index: 2;
+    }
+
+    .insight-list li {
+      background: rgba(99, 102, 241, 0.08);
+      color: #312e81;
+      border-radius: 14px;
+      padding: 12px 16px;
+      font-size: 0.95rem;
+      line-height: 1.4;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .insight-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--accent);
+      color: white;
+      font-weight: 600;
+      width: 32px;
+      height: 32px;
+      border-radius: 999px;
+    }
+
+    footer {
+      text-align: center;
+      padding: 24px;
+      color: var(--muted-text);
+      font-size: 0.9rem;
+    }
+
+    @media (max-width: 768px) {
+      header {
+        padding-top: 48px;
+      }
+      header h1 {
+        font-size: 2.1rem;
+      }
+      main {
+        margin-top: -32px;
+        gap: 24px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Social Media & Education Insights</h1>
+    <p>Visual analytics that highlight how social media habits and perceptions align with educational outcomes across students, faculty, and lifelong learners.</p>
+  </header>
+  <main>
+    <section class="card">
+      <h2>Gender Participation</h2>
+      <p>Distribution of survey respondents across gender identities.</p>
+      <canvas id="genderChart"></canvas>
+    </section>
+
+    <section class="card">
+      <h2>Preferred Platforms</h2>
+      <p>The social platforms learners rely on most for educational support.</p>
+      <canvas id="platformChart"></canvas>
+    </section>
+
+    <section class="card">
+      <h2>Daily Usage Patterns</h2>
+      <p>How time spent on social media differs by academic status.</p>
+      <canvas id="usageChart"></canvas>
+    </section>
+
+    <section class="card">
+      <h2>Learning Outcomes Sentiment</h2>
+      <p>Average agreement level for statements about outcomes and support.</p>
+      <canvas id="sentimentRadar"></canvas>
+    </section>
+
+    <section class="card">
+      <h2>Experience & Intent to Use</h2>
+      <p>How prior experience influences willingness to continue using social media for education.</p>
+      <canvas id="experienceChart"></canvas>
+    </section>
+
+    <section class="card">
+      <h2>Key Takeaways</h2>
+      <ul class="insight-list" id="insights"></ul>
+    </section>
+  </main>
+  <footer>Dataset: Social Media in Education survey | Charts by Chart.js</footer>
+
+  <script>
+    const likertScale = {
+      "Strongly Disagree": 1,
+      "Disagree": 2,
+      "Neutral": 3,
+      "Agree": 4,
+      "Strongly Agree": 5
+    };
+
+    const likertLabels = {
+      EduOutcome: "Perceived Learning Outcomes",
+      PerformanceExpentancy: "Performance Expectancy",
+      EasyofUse: "Ease of Use",
+      EffortExpentancy: "Effort Expectancy",
+      SocialInfuence: "Social Influence",
+      SocialMediaRisk: "Social Media Risk (reversed)",
+      FacilitatingConditions: "Support Conditions",
+      SelfControl: "Self Control",
+      BehaviouralIntentiontoUse: "Behavioural Intention",
+      VountarinessofUse: "Voluntariness"
+    };
+
+    const colorPalette = [
+      "#6366f1",
+      "#ec4899",
+      "#10b981",
+      "#f59e0b",
+      "#3b82f6",
+      "#8b5cf6",
+      "#ef4444"
+    ];
+
+    function aggregateCounts(data, key) {
+      return data.reduce((acc, row) => {
+        const value = row[key] || "Unknown";
+        acc[value] = (acc[value] || 0) + 1;
+        return acc;
+      }, {});
+    }
+
+    function groupCounts(data, groupKey, valueKey) {
+      const groups = {};
+      data.forEach(row => {
+        const group = row[groupKey] || "Other";
+        const value = row[valueKey] || "Unknown";
+        groups[group] = groups[group] || {};
+        groups[group][value] = (groups[group][value] || 0) + 1;
+      });
+      return groups;
+    }
+
+    function averageLikert(data, key) {
+      const filtered = data.filter(row => row[key] in likertScale);
+      if (!filtered.length) return 0;
+      const avg = filtered.reduce((sum, row) => sum + likertScale[row[key]], 0) / filtered.length;
+      return Number(avg.toFixed(2));
+    }
+
+    function buildInsights(data) {
+      const total = data.length;
+      const genderCounts = aggregateCounts(data, "Gender");
+      const topGender = Object.entries(genderCounts).sort((a, b) => b[1] - a[1])[0];
+
+      const platformCounts = aggregateCounts(data, "TypeSocialMedia");
+      const topPlatform = Object.entries(platformCounts).sort((a, b) => b[1] - a[1])[0];
+
+      const heavyUsers = data.filter(row => row.HoursSMuse === "More than 5 hours").length;
+      const alwaysUse = data.filter(row => row.FrqUse === "Always").length;
+
+      const outcomeAvg = averageLikert(data, "EduOutcome");
+      const intentionAvg = averageLikert(data, "BehaviouralIntentiontoUse");
+
+      const insights = [
+        `Survey captured <strong>${total.toLocaleString()}</strong> voices with <strong>${topGender[0]}</strong> respondents representing ${(topGender[1] / total * 100).toFixed(1)}% of the sample.`,
+        `<strong>${topPlatform[0]}</strong> dominates preferred platforms, engaging ${(topPlatform[1] / total * 100).toFixed(1)}% of respondents.`,
+        `${heavyUsers} participants spend more than five hours daily on social media, while ${alwaysUse} say they are <em>always</em> connected.`,
+        `Perceived learning outcomes score an average of <strong>${outcomeAvg}</strong> out of 5, and intention to continue using social media scores <strong>${intentionAvg}</strong>.`
+      ];
+
+      const list = document.getElementById("insights");
+      insights.forEach((text, index) => {
+        const item = document.createElement("li");
+        const badge = document.createElement("span");
+        badge.className = "insight-badge";
+        badge.textContent = index + 1;
+        item.appendChild(badge);
+        const span = document.createElement("span");
+        span.innerHTML = text;
+        item.appendChild(span);
+        list.appendChild(item);
+      });
+    }
+
+    function createCharts(data) {
+      // Gender chart
+      const genderCounts = aggregateCounts(data, "Gender");
+      new Chart(document.getElementById("genderChart"), {
+        type: "doughnut",
+        data: {
+          labels: Object.keys(genderCounts),
+          datasets: [{
+            data: Object.values(genderCounts),
+            backgroundColor: ["#6366f1", "#ec4899", "#22d3ee"],
+            borderWidth: 0
+          }]
+        },
+        options: {
+          plugins: {
+            legend: { position: "bottom" }
+          }
+        }
+      });
+
+      // Platform chart
+      const platformCounts = aggregateCounts(data, "TypeSocialMedia");
+      const platformEntries = Object.entries(platformCounts).sort((a, b) => b[1] - a[1]);
+      new Chart(document.getElementById("platformChart"), {
+        type: "bar",
+        data: {
+          labels: platformEntries.map(([label]) => label),
+          datasets: [{
+            label: "Respondents",
+            data: platformEntries.map(([, value]) => value),
+            backgroundColor: platformEntries.map((_, idx) => colorPalette[idx % colorPalette.length]),
+            borderRadius: 12
+          }]
+        },
+        options: {
+          scales: {
+            x: { grid: { display: false } },
+            y: { beginAtZero: true }
+          },
+          plugins: {
+            legend: { display: false }
+          }
+        }
+      });
+
+      // Usage chart (stacked bar)
+      const usageGroups = groupCounts(data, "AcademicStatus", "HoursSMuse");
+      const hoursBuckets = ["Less than an hour", "1-3 hours", "3-5 hours", "More than 5 hours"];
+      const academicStatuses = Object.keys(usageGroups);
+      const datasets = hoursBuckets.map((bucket, idx) => ({
+        label: bucket,
+        data: academicStatuses.map(status => usageGroups[status][bucket] || 0),
+        backgroundColor: colorPalette[idx % colorPalette.length],
+        borderRadius: 14
+      }));
+
+      new Chart(document.getElementById("usageChart"), {
+        type: "bar",
+        data: {
+          labels: academicStatuses,
+          datasets
+        },
+        options: {
+          scales: {
+            x: { stacked: true, grid: { display: false } },
+            y: { stacked: true, beginAtZero: true }
+          },
+          plugins: {
+            legend: { position: "bottom" }
+          }
+        }
+      });
+
+      // Likert radar chart
+      const radarLabels = Object.keys(likertLabels);
+      const radarData = radarLabels.map(key => averageLikert(data, key));
+      new Chart(document.getElementById("sentimentRadar"), {
+        type: "radar",
+        data: {
+          labels: radarLabels.map(key => likertLabels[key]),
+          datasets: [{
+            label: "Average Agreement",
+            data: radarData,
+            backgroundColor: "rgba(99, 102, 241, 0.18)",
+            borderColor: "#6366f1",
+            pointBackgroundColor: "#6366f1"
+          }]
+        },
+        options: {
+          scales: {
+            r: {
+              suggestedMin: 1,
+              suggestedMax: 5,
+              ticks: { stepSize: 1 }
+            }
+          }
+        }
+      });
+
+      // Experience vs intention
+      const experienceGroups = data.reduce((acc, row) => {
+        const key = row.Experience === "yes" ? "Experienced" : "Newcomer";
+        acc[key] = acc[key] || { intention: [], outcome: [] };
+        if (row.BehaviouralIntentiontoUse in likertScale) {
+          acc[key].intention.push(likertScale[row.BehaviouralIntentiontoUse]);
+        }
+        if (row.EduOutcome in likertScale) {
+          acc[key].outcome.push(likertScale[row.EduOutcome]);
+        }
+        return acc;
+      }, {});
+
+      const experienceLabels = Object.keys(experienceGroups);
+      const experienceAverages = experienceLabels.map(label => ({
+        intention: average(experienceGroups[label].intention),
+        outcome: average(experienceGroups[label].outcome)
+      }));
+
+      new Chart(document.getElementById("experienceChart"), {
+        type: "bar",
+        data: {
+          labels: experienceLabels,
+          datasets: [
+            {
+              label: "Behavioural Intention",
+              data: experienceAverages.map(item => item.intention),
+              backgroundColor: "#10b981",
+              borderRadius: 14
+            },
+            {
+              label: "Perceived Outcome",
+              data: experienceAverages.map(item => item.outcome),
+              backgroundColor: "#3b82f6",
+              borderRadius: 14
+            }
+          ]
+        },
+        options: {
+          scales: {
+            y: { beginAtZero: true, suggestedMax: 5 }
+          }
+        }
+      });
+    }
+
+    function average(values) {
+      if (!values.length) return 0;
+      return Number((values.reduce((sum, value) => sum + value, 0) / values.length).toFixed(2));
+    }
+
+    fetch("SMeducationData.csv")
+      .then(response => response.text())
+      .then(text => {
+        const results = Papa.parse(text, { header: true, skipEmptyLines: true });
+        const data = results.data.map(row => {
+          const cleaned = { ...row };
+          if ("" in cleaned) {
+            delete cleaned[""];
+          }
+          return cleaned;
+        });
+        createCharts(data);
+        buildInsights(data);
+      })
+      .catch(error => {
+        console.error("Failed to load dataset", error);
+      });
+  </script>
+</body>
+</html>
